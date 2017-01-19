@@ -106,4 +106,78 @@ TEST_F(NginxStringConfigTest,NestedConfigContent){
 	EXPECT_EQ("80", out_config_.statements_.at(0)->child_block_->statements_.at(0)->tokens_.at(1));
 }
 
+TEST_F(NginxStringConfigTest,NestedConfigMultipleAndNormalStatement){
+	const char *text =
+	"listen 80 default_server;"
+	"server {"
+        	
+		"location {"
+        		"root /data;"
+    		"}"
+        "}"
+    "server_name localhost;";
+	std::string test(text);
+	EXPECT_TRUE(ParseString(test));
+}
 
+TEST_F(NginxStringConfigTest,InvalidStatementInNested){
+	const char *text =
+	"listen 80 default_server;"
+	"server {"
+        	
+		"location / {"
+        		"root /data;"
+        		"proxy_pass   http://127.0.0.1:8080"
+    		"}"
+        "}"
+    "server_name localhost;";
+	std::string test(text);
+	EXPECT_FALSE(ParseString(test));
+}
+
+TEST_F(NginxStringConfigTest,SpecailChar){
+	const char *text =
+	"listen 80 default_server;"
+	"server {"
+        	
+		"location / {"
+        		"root /data;"
+        		"proxy_pass   http://127.0.0.1:8080;"
+    		"}"
+        "}"
+    "server_name localhost;";
+	std::string test(text);
+	EXPECT_TRUE(ParseString(test));
+}
+
+TEST_F(NginxStringConfigTest,SpecailChar2){
+	const char *text =
+	"listen 80 default_server;"
+	"server {"
+        	
+		"location ~ ^/(images|javascript|js|css|flash|media|static)/  {"
+        		"root /data;"
+        		"proxy_pass   http://127.0.0.1:8080;"
+    		"}"
+        "}"
+    "server_name localhost;";
+	std::string test(text);
+	EXPECT_TRUE(ParseString(test));
+}
+
+
+TEST_F(NginxStringConfigTest,MultipleNestedConfigContent){
+	const char *text =
+	"server {"
+        	"cc {"
+        		"root /data/www;"
+    		"}"
+		"location {"
+        		"root /data;"
+    		"}"
+    "}";
+	std::string test(text);
+	EXPECT_TRUE(ParseString(test));
+	EXPECT_EQ("location", out_config_.statements_.at(0)->child_block_->statements_.at(1)->tokens_.at(0));
+	EXPECT_EQ("/data/www", out_config_.statements_.at(0)->child_block_->statements_.at(0)->child_block_->statements_.at(0)->tokens_.at(1));
+}
